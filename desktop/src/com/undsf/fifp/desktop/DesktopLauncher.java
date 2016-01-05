@@ -10,7 +10,7 @@ public class DesktopLauncher {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		config.width = Constants.CANVAS_WIDTH;
 		config.height = Constants.CANVAS_HEIGHT;
-		config.title = "Freedom Idol Festival Demo2";
+		config.title = "自由偶像祭 Demo2";
 		new LwjglApplication(new GdxGame(), config);
 	}
 }

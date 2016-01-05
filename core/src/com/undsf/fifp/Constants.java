@@ -13,19 +13,37 @@ public class Constants {
     public static final int AVATAR_WIDTH = 128;
     public static final int AVATAR_HEIGHT = 128;
 
+    public static final int PERFECT_LENGTH = 400;
+
     public static final int INDEX_X = 0;
     public static final int INDEX_Y = 1;
 
     public static final int IDOL_AMOUNT = 9;
 
+    public static final double FULL_ACTION_RATE = 2.05;
+
+    //TODO thresholds
+    public static final double MISS_THRESHOLD = 0.25;
+    public static final double GOOD_THRESHOLD = 0.2;
+    public static final double GREAT_THRESHOLD = 0.15;
+    public static final double PERFECT_THRESHOLD = 0.10;
+
     public static float[][] AVATAR_COORDINATE;
+    public static float[][] TAP_END_COORDINATE;
+    public static double[] TAP_PATH_ANGLE;
 
     static{
+        TAP_PATH_ANGLE = new double[IDOL_AMOUNT];
         AVATAR_COORDINATE = new float[IDOL_AMOUNT][2];
+        TAP_END_COORDINATE = new float[IDOL_AMOUNT][2];
         for (int i=0; i<IDOL_AMOUNT; i++){
-            double angle = i * Math.PI / 8;
-            AVATAR_COORDINATE[i][INDEX_X] = (float)(TAP_START_X - 400*Math.cos(angle)) - AVATAR_WIDTH / 2;
-            AVATAR_COORDINATE[i][INDEX_Y] = (float)(TAP_START_Y - 400*Math.sin(angle)) - AVATAR_HEIGHT / 2;
+            double angle = i * Math.PI / (IDOL_AMOUNT-1);
+            TAP_PATH_ANGLE[i] = angle;
+            AVATAR_COORDINATE[i][INDEX_X] = (float)(TAP_START_X - PERFECT_LENGTH * Math.cos(angle)) - AVATAR_WIDTH / 2;
+            AVATAR_COORDINATE[i][INDEX_Y] = (float)(TAP_START_Y - PERFECT_LENGTH * Math.sin(angle)) - AVATAR_HEIGHT / 2;
+            TAP_END_COORDINATE[i][INDEX_X] = (float)(TAP_START_X - PERFECT_LENGTH * FULL_ACTION_RATE * Math.cos(angle)) - AVATAR_HEIGHT / 2;
+            TAP_END_COORDINATE[i][INDEX_Y] = (float)(TAP_START_X - PERFECT_LENGTH * FULL_ACTION_RATE * Math.sin(angle)) - AVATAR_HEIGHT / 2;
+            System.out.println(AVATAR_COORDINATE[i][INDEX_X] + "," + AVATAR_COORDINATE[i][INDEX_Y] + " r=" + angle);
         }
     }
 }

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 
 /**
  * Created by Arathi on 2016-01-04.
@@ -24,11 +25,11 @@ public class IdolAvatar extends Actor {
         this.awaken = awaken;
 
         String type = awaken ? "rankup" : "normal";
-        String avatarFileName = String.format(FILE_NAME_FORMAT_2, type, id);
         this.setWidth(Constants.AVATAR_WIDTH);
         this.setHeight(Constants.AVATAR_HEIGHT);
 
         //检查文件是否存在
+        String avatarFileName = String.format(FILE_NAME_FORMAT_2, type, id);
         FileHandle fileHandle = Gdx.files.internal(avatarFileName);
         if ( fileHandle.exists() == false ) {
             avatarFileName = String.format(FILE_NAME_FORMAT_1, id, type);
@@ -46,8 +47,7 @@ public class IdolAvatar extends Actor {
 
     public void setPosition(int id){
         //TODO 获取预置的坐标，设置x和y
-        setPosition( Constants.AVATAR_COORDINATE[id][0], Constants.AVATAR_COORDINATE[id][1] );
-        System.out.println(getX()+","+getY());
+        setPosition( Constants.AVATAR_COORDINATE[id][Constants.INDEX_X], Constants.AVATAR_COORDINATE[id][Constants.INDEX_Y] );
     }
 
     @Override

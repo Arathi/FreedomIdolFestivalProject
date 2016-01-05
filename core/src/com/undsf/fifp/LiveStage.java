@@ -19,6 +19,8 @@ public class LiveStage extends Stage {
     private Image scorebar;
     private IdolAvatar[] avatars;
     private List<Tap> taps;
+    private double tempo; //速率
+    private double perfectTime;
 
     public LiveStage() {
         Texture backgroundTexture = new Texture("backgrounds/06.png");
@@ -27,6 +29,10 @@ public class LiveStage extends Stage {
         background = new Image(backgroundTexture);
         scorebar = new Image(scorebarTexture);
         tapStartPoint = new Image(tapStartTexture);
+
+        perfectTime = 1.0; //Hard级，暂定1秒
+        double fullActionTime = perfectTime * Constants.FULL_ACTION_RATE;
+        double fullActionLength = Constants.PERFECT_LENGTH * Constants.FULL_ACTION_RATE;
 
         background.setPosition(0, 0);
         tapStartPoint.setOrigin(tapStartTexture.getWidth()/2, tapStartTexture.getHeight()/2);
@@ -46,17 +52,13 @@ public class LiveStage extends Stage {
         }
 
         background.addAction(
-                Actions.alpha(0.5f, 0.5f)
+                Actions.alpha(0.5f, 0.75f)
         );
 
         taps = new ArrayList<Tap>();
 
-        Tap tap = new Tap();
-        Action actions = Actions.parallel(
-                Actions.moveTo(480-64, 80-64, 1f),
-                Actions.scaleTo(1, 1, 1f)
-        );
-        tap.addAction(actions);
+        Tap tap = new Tap(6);
+        tap.addMoveAndScaleAction((float) fullActionTime);
         this.addActor(tap);
     }
 
@@ -68,5 +70,19 @@ public class LiveStage extends Stage {
     @Override
     public void act() {
         super.act();
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        super.touchDown(screenX, screenY, pointer, button);
+        System.out.println("touchDown: " + screenX + "," + screenY);
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        super.touchUp(screenX, screenY, pointer, button);
+        System.out.println("touchUp: " + screenX + "," + screenY);
+        return false;
     }
 }
