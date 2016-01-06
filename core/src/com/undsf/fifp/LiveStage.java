@@ -6,6 +6,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -31,6 +32,7 @@ public class LiveStage extends Stage {
     private Sound seGood;
     private Sound seBad;
     private Sound seMiss;
+    private List<Buff> buffs;
 
     public LiveStage() {
         Texture backgroundTexture = new Texture("backgrounds/06.png");
@@ -40,8 +42,9 @@ public class LiveStage extends Stage {
         scorebar = new Image(scorebarTexture);
         tapStartPoint = new Image(tapStartTexture);
 
-        FileHandle fh = Gdx.files.internal("se/perfect.ogg");
-        sePerfect = Gdx.audio.newSound(fh);
+        sePerfect = Gdx.audio.newSound(Gdx.files.internal("se/perfect.ogg"));
+        seGreat = Gdx.audio.newSound(Gdx.files.internal("se/great.ogg"));
+        seGood = Gdx.audio.newSound(Gdx.files.internal("se/good.ogg"));
 
         perfectTime = 1.0; //Hard级，暂定1秒
         double fullActionTime = perfectTime * Constants.FULL_ACTION_RATE;
@@ -79,14 +82,124 @@ public class LiveStage extends Stage {
 
         taps = new ArrayList<Tap>();
 
-        Tap tap = new Tap(6);
-        tap.addMoveAndScaleAction((float) fullActionTime);
-        this.addActor(tap);
+        Tap tapRing = new Tap(2, Tap.TAP_TYPE_RING, 0, false);
+        tapRing.addMoveAndScaleAction((float) fullActionTime);
+        this.addActor(tapRing);
+
+        Tap tapCanal = new Tap(6, Tap.TAP_TYPE_CANAL, 100, false);
+        tapCanal.addMoveAndScaleAction((float) fullActionTime);
+        this.addActor(tapCanal);
+    }
+
+    public int judging(int touchTime, int nextPerfectTime) {
+        //TODO 具体判定还要结合buff
+        double delta = (nextPerfectTime - touchTime) / 1000;
+        //过于提前，触击无效
+        if (delta >= Constants.BAD_THRESHOLD){
+            return Constants.JUDGING_NONE;
+        }
+        //过于提前，触及有效，根据时差判定BAD和GOOD
+        if (delta >= Constants.GOOD_THRESHOLD && delta < Constants.BAD_THRESHOLD){
+            return Constants.JUDGING_BAD;
+        }
+        if (delta >= Constants.GREAT_THRESHOLD && delta < Constants.GOOD_THRESHOLD){
+            return Constants.JUDGING_GOOD;
+        }
+        if (delta >= Constants.PERFECT_THRESHOLD && delta < Constants.GREAT_THRESHOLD){
+            return Constants.JUDGING_GOOD;
+        }
+        //在perfect范围内，判定为perfect
+        if (delta >= -Constants.PERFECT_THRESHOLD && delta < Constants.PERFECT_THRESHOLD){
+            return Constants.JUDGING_PERFECT;
+        }
+        //过于滞后
+        if (delta >= -Constants.GREAT_THRESHOLD && delta < -Constants.PERFECT_THRESHOLD){
+            return Constants.JUDGING_GREAT;
+        }
+        if (delta >= -Constants.GOOD_THRESHOLD && delta < -Constants.GREAT_THRESHOLD){
+            return Constants.JUDGING_GOOD;
+        }
+        if (delta >= -Constants.BAD_THRESHOLD && delta < -Constants.GOOD_THRESHOLD ){
+            return Constants.JUDGING_BAD;
+        }
+        return Constants.JUDGING_NONE;
+    }
+
+    public void playTouchFeedbackEffect(int result) {
+        if (result == Constants.JUDGING_PERFECT) {
+            sePerfect.play();
+        }
+        else if (result == Constants.JUDGING_GREAT) {
+            seGreat.play();
+        }
+        else if (result == Constants.JUDGING_GOOD) {
+            seGood.play();
+        }
+        else if (result == Constants.JUDGING_BAD) {
+            //扣分
+        }
+        else if (result == Constants.JUDGING_MISS) {
+            //扣分
+        }
+        else {
+            //点击无效
+        }
+    }
+
+    public void removeExpiredTaps() {
+        //在这里移除失效的tap，如果超时，就标记为MISS
+        if (taps == null) return;
+        for (Tap tap : taps){
+            //
+        }
+    }
+
+    /**
+     * 通过触击坐标，获取触击的头像的ID
+     * @param x
+     * @param y
+     * @return 触击的头像的ID（0-8），如果触击的不是头像，返回-1
+     */
+    public int getAvatarPositionID(int x, int y) {
+        for (int id=0; id<Constants.IDOL_AMOUNT; id++){
+            float leftX, rightX, bottomY, topY;
+            leftX = Constants.AVATAR_COORDINATE[id][Constants.INDEX_X];
+            rightX = Constants.AVATAR_COORDINATE[id][Constants.INDEX_X] + Constants.AVATAR_WIDTH;
+            bottomY = Constants.AVATAR_COORDINATE[id][Constants.INDEX_Y];
+            topY = Constants.AVATAR_COORDINATE[id][Constants.INDEX_Y] + Constants.AVATAR_HEIGHT;
+            if (x>=leftX && x<=rightX && y>=bottomY && y<=topY){
+                //System.out.println("[INFO]  ("+x+","+y+")在Avatar"+id+"("+leftX+"->"+rightX+","+bottomY+"->"+topY+")范围内");
+                return id;
+            }
+            //System.err.println("[ERROR] ("+x+","+y+")不在Avatar"+id+"("+leftX+"->"+rightX+","+bottomY+"->"+topY+")范围内");
+        }
+        return -1;
+    }
+
+    /**
+     * 选取正在某路径上运动的离终点最近的tap
+     * @param avatarID
+     * @return 如果这条路径上没有符合条件的tap，返回null
+     */
+    public Tap getTapByPath(int avatarID) {
+        return null;
+    }
+
+    public void update() {
+        //定时更新
     }
 
     @Override
     public void draw() {
         super.draw();
+        ////辅助线
+        //ShapeRenderer sr = new ShapeRenderer();
+        //sr.setAutoShapeType(true);
+        //sr.begin();
+        //for (int i=0; i<Constants.IDOL_AMOUNT; i++){
+        //    sr.rect(Constants.AVATAR_COORDINATE[i][0], Constants.AVATAR_COORDINATE[i][1], Constants.AVATAR_WIDTH, Constants.AVATAR_HEIGHT);
+        //}
+        //sr.end();
     }
 
     @Override
@@ -97,15 +210,34 @@ public class LiveStage extends Stage {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         super.touchDown(screenX, screenY, pointer, button);
-        System.out.println("touchDown: " + screenX + "," + screenY);
-        sePerfect.play();
-        return false;
+        int canvasX = screenX;
+        int canvasY = Gdx.graphics.getHeight() - screenY;
+        System.out.println("touchDown: " + canvasX + "," + canvasY);
+        int avatarID = getAvatarPositionID(canvasX, canvasY);
+        if (avatarID==-1){
+            return false;
+        }
+        //检测是否有音符开始
+        int result = judging(1000, 1000);
+        playTouchFeedbackEffect(result);
+        return true;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         super.touchUp(screenX, screenY, pointer, button);
-        System.out.println("touchUp: " + screenX + "," + screenY);
+        int canvasX = screenX;
+        int canvasY = Gdx.graphics.getHeight() - screenY;
+        System.out.println("touchUp: " + canvasX + "," + canvasY);
+        int avatarID = getAvatarPositionID(canvasX, canvasY);
+        if (avatarID==-1){
+            return false;
+        }
+        //检测是否有长音符结束
+        //检测是否有音符开始
+        //Tap nextTap =
+        int result = judging(1000, 1000);
+        playTouchFeedbackEffect(0);
         return false;
     }
 }

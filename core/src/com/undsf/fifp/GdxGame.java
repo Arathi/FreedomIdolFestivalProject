@@ -25,6 +25,7 @@ public class GdxGame extends ApplicationAdapter {
 		int canvasHeight = Gdx.app.getGraphics().getHeight();
 		batch.begin();
 		liveStage.act();
+		liveStage.update();
 		liveStage.draw();
 		batch.end();
 	}

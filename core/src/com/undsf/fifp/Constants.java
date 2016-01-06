@@ -23,10 +23,19 @@ public class Constants {
     public static final double FULL_ACTION_RATE = 2.05;
 
     //TODO thresholds
-    public static final double MISS_THRESHOLD = 0.25;
-    public static final double GOOD_THRESHOLD = 0.2;
-    public static final double GREAT_THRESHOLD = 0.15;
-    public static final double PERFECT_THRESHOLD = 0.10;
+    //public static final double MISS_THRESHOLD = 0.25;
+    public static final double BAD_THRESHOLD = 0.20;
+    public static final double GOOD_THRESHOLD = 0.15;
+    public static final double GREAT_THRESHOLD = 0.10;
+    public static final double PERFECT_THRESHOLD = 0.05;
+
+    //判定
+    public static final int JUDGING_NONE = 0;
+    public static final int JUDGING_PERFECT = 1;
+    public static final int JUDGING_GREAT = 2;
+    public static final int JUDGING_GOOD = 3;
+    public static final int JUDGING_BAD = 4;
+    public static final int JUDGING_MISS = 5;
 
     public static float[][] AVATAR_COORDINATE;
     public static float[][] TAP_END_COORDINATE;
@@ -43,7 +52,7 @@ public class Constants {
             AVATAR_COORDINATE[i][INDEX_Y] = (float)(TAP_START_Y - PERFECT_LENGTH * Math.sin(angle)) - AVATAR_HEIGHT / 2;
             TAP_END_COORDINATE[i][INDEX_X] = (float)(TAP_START_X - PERFECT_LENGTH * FULL_ACTION_RATE * Math.cos(angle)) - AVATAR_HEIGHT / 2;
             TAP_END_COORDINATE[i][INDEX_Y] = (float)(TAP_START_X - PERFECT_LENGTH * FULL_ACTION_RATE * Math.sin(angle)) - AVATAR_HEIGHT / 2;
-            System.out.println(AVATAR_COORDINATE[i][INDEX_X] + "," + AVATAR_COORDINATE[i][INDEX_Y] + " r=" + angle);
+            //System.out.println(AVATAR_COORDINATE[i][INDEX_X] + "," + AVATAR_COORDINATE[i][INDEX_Y] + " r=" + angle);
         }
     }
 }
