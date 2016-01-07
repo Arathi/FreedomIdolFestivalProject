@@ -46,9 +46,9 @@ public class LiveStage extends Stage {
         scorebar = new Image(scorebarTexture);
         tapStartPoint = new Image(tapStartTexture);
 
-        sePerfect = Gdx.audio.newSound(Gdx.files.internal("se/perfect.ogg"));
-        seGreat = Gdx.audio.newSound(Gdx.files.internal("se/great.ogg"));
-        seGood = Gdx.audio.newSound(Gdx.files.internal("se/good.ogg"));
+        sePerfect = Gdx.audio.newSound(Gdx.files.internal("se/perfect.mp3"));
+        seGreat = Gdx.audio.newSound(Gdx.files.internal("se/great.mp3"));
+        seGood = Gdx.audio.newSound(Gdx.files.internal("se/good.mp3"));
 
         perfectTimeDelay = 1.0; //Easy 2秒、Normal 1.5秒、Hard 1秒
         fullActionTime = perfectTimeDelay * Constants.FULL_ACTION_RATE;
@@ -83,15 +83,27 @@ public class LiveStage extends Stage {
                 Actions.alpha(0.5f, 0.75f)
         );
 
-        liveStartTime = System.currentTimeMillis() + 1000; //开始于2秒后
+        liveStartTime = System.currentTimeMillis() + 1000; //开始于1秒后
         taps = new ArrayList<LinkedList<Tap>>();
         for (int i=0; i<Constants.IDOL_AMOUNT; i++) {
             LinkedList<Tap> q = new LinkedList<Tap>();
             taps.add( q );
         }
 
+        //TODO 测试数据
+        String songName = "sakura_iro_no_yume";
+        int keys = 9;
+        String difficulty = "ez";
+        Music music = Gdx.audio.newMusic( Gdx.files.internal("songs/" + songName + "/" + songName + ".mp3") );
+        music.play();
+
         addTap(2, Tap.TAP_TYPE_RING, 1000, 0, false);
         addTap(6, Tap.TAP_TYPE_CANAL, 1500, 0, false);
+        //addTap(2, Tap.TAP_TYPE_RING, 2000, 0, false);
+        //addTap(2, Tap.TAP_TYPE_RING, 3000, 0, false);
+        //addTap(2, Tap.TAP_TYPE_RING, 4000, 0, false);
+        //addTap(2, Tap.TAP_TYPE_RING, 5000, 0, false);
+        //addTap(2, Tap.TAP_TYPE_RING, 6000, 0, false);
     }
 
     public void addTap(int target, int type, int time, float length, boolean star) {
@@ -102,7 +114,7 @@ public class LiveStage extends Stage {
 
     public int judging(long touchTime, long nextPerfectTime) {
         //TODO 具体判定还要结合buff
-        double delta = (nextPerfectTime - touchTime) / 1000;
+        double delta = (nextPerfectTime - touchTime) / 1000.0;
         //过于提前，触击无效
         if (delta >= Constants.BAD_THRESHOLD){
             return Constants.JUDGING_NONE;
@@ -147,13 +159,13 @@ public class LiveStage extends Stage {
             tap.addScaleAndFadeAction();
         }
         if (result == Constants.JUDGING_PERFECT) {
-            sePerfect.play();
+            sePerfect.play(1.0f);
         }
         else if (result == Constants.JUDGING_GREAT) {
-            seGreat.play();
+            seGreat.play(1.0f);
         }
         else if (result == Constants.JUDGING_GOOD) {
-            seGood.play();
+            seGood.play(1.0f);
         }
         else if (result == Constants.JUDGING_BAD) {
             //扣分
@@ -225,10 +237,14 @@ public class LiveStage extends Stage {
             for (Tap tap : q){
                 //if (tap.isKilled()) continue;
                 if (tap.isCreated()) continue;
-                long currentTime = System.currentTimeMillis();
-                long liveElapseTime = currentTime - liveStartTime;
-                long delta = tap.getPerfectTime() - liveElapseTime;
-                if (delta <= perfectTimeDelay) {
+                long liveElapseTime = System.currentTimeMillis() - liveStartTime;
+                //System.out.println(liveElapseTime);
+                if (liveElapseTime < 0) continue;
+
+                //long delta = tap.getPerfectTime() - liveElapseTime;
+                //System.out.println("perfectTimeDelay = " + perfectTimeDelay);
+                if (liveElapseTime + perfectTimeDelay*1000 >= tap.getPerfectTime()) {
+                    //System.out.println(liveElapseTime + ": send " + tap.getPerfectTime());
                     tap.addMoveAndScaleAction((float) fullActionTime);
                     tap.setCreated();
                 }
@@ -269,7 +285,8 @@ public class LiveStage extends Stage {
         Tap nextTap = getTapByPath(avatarID);
         if (nextTap == null) return false;
 
-        int result = judging(System.currentTimeMillis(), nextTap.getPerfectTime());
+        long liveElapseTime = System.currentTimeMillis() - liveStartTime;
+        int result = judging(liveElapseTime, nextTap.getPerfectTime());
         playTouchFeedbackEffect(nextTap, result);
         return true;
     }
@@ -287,7 +304,7 @@ public class LiveStage extends Stage {
         //检测是否有长音符结束
         //检测是否有音符开始
         //Tap nextTap =
-        int result = judging(1000, 1000);
+        //int result = judging(1000, 1000);
         playTouchFeedbackEffect(null, 0);
         return false;
     }
