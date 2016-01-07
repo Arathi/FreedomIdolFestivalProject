@@ -100,7 +100,7 @@ public class LiveStage extends Stage {
         this.taps.get(target).add(tap);
     }
 
-    public int judging(int touchTime, int nextPerfectTime) {
+    public int judging(long touchTime, long nextPerfectTime) {
         //TODO 具体判定还要结合buff
         double delta = (nextPerfectTime - touchTime) / 1000;
         //过于提前，触击无效
@@ -109,32 +109,43 @@ public class LiveStage extends Stage {
         }
         //过于提前，触及有效，根据时差判定BAD和GOOD
         if (delta >= Constants.GOOD_THRESHOLD && delta < Constants.BAD_THRESHOLD){
+            System.out.println("BAD");
             return Constants.JUDGING_BAD;
         }
         if (delta >= Constants.GREAT_THRESHOLD && delta < Constants.GOOD_THRESHOLD){
+            System.out.println("GOOD");
             return Constants.JUDGING_GOOD;
         }
         if (delta >= Constants.PERFECT_THRESHOLD && delta < Constants.GREAT_THRESHOLD){
+            System.out.println("GREAT");
             return Constants.JUDGING_GREAT;
         }
         //在perfect范围内，判定为perfect
         if (delta >= -Constants.PERFECT_THRESHOLD && delta < Constants.PERFECT_THRESHOLD){
+            System.out.println("PERFECT");
             return Constants.JUDGING_PERFECT;
         }
         //过于滞后
         if (delta >= -Constants.GREAT_THRESHOLD && delta < -Constants.PERFECT_THRESHOLD){
+            System.out.println("GREAT");
             return Constants.JUDGING_GREAT;
         }
         if (delta >= -Constants.GOOD_THRESHOLD && delta < -Constants.GREAT_THRESHOLD){
+            System.out.println("GOOD");
             return Constants.JUDGING_GOOD;
         }
         if (delta >= -Constants.BAD_THRESHOLD && delta < -Constants.GOOD_THRESHOLD ){
+            System.out.println("BAD");
             return Constants.JUDGING_BAD;
         }
         return Constants.JUDGING_NONE;
     }
 
-    public void playTouchFeedbackEffect(int result) {
+    public void playTouchFeedbackEffect(Tap tap, int result) {
+        if (tap != null) {
+            //TODO 停止之前的动画
+            tap.addScaleAndFadeAction();
+        }
         if (result == Constants.JUDGING_PERFECT) {
             sePerfect.play();
         }
@@ -197,6 +208,10 @@ public class LiveStage extends Stage {
      */
     public Tap getTapByPath(int path) {
         Queue<Tap> q = taps.get(path);
+        if (q==null || q.size()<=0) {
+            System.err.println(path+"号路径无法访问或者没有tap");
+            return null;
+        }
         Tap tap = q.element();
         //TODO 如果取到了失效的tap，重新取
         //if (tap == null) return null;
@@ -205,11 +220,6 @@ public class LiveStage extends Stage {
 
     public void update() {
         //定时更新
-        //for (int i=0; i<Constants.IDOL_AMOUNT; i++) {
-        //    LinkedList<Tap> q = taps.get(i);
-        //    Tap tap = q.element();
-        //    if (tap.isKilled()) q.remove();
-        //}
         removeExpiredTaps(); //先更新
         for (LinkedList<Tap> q : taps){
             for (Tap tap : q){
@@ -224,8 +234,6 @@ public class LiveStage extends Stage {
                 }
             }
         }
-        //tap.addMoveAndScaleAction((float) fullActionTime);
-        //currentTime
     }
 
     @Override
@@ -259,8 +267,10 @@ public class LiveStage extends Stage {
         }
         //检测是否有音符开始
         Tap nextTap = getTapByPath(avatarID);
-        int result = judging(1000, 1000);
-        playTouchFeedbackEffect(result);
+        if (nextTap == null) return false;
+
+        int result = judging(System.currentTimeMillis(), nextTap.getPerfectTime());
+        playTouchFeedbackEffect(nextTap, result);
         return true;
     }
 
@@ -278,7 +288,7 @@ public class LiveStage extends Stage {
         //检测是否有音符开始
         //Tap nextTap =
         int result = judging(1000, 1000);
-        playTouchFeedbackEffect(0);
+        playTouchFeedbackEffect(null, 0);
         return false;
     }
 }

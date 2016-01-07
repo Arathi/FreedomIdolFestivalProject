@@ -9,6 +9,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Created by Arathi on 2016-01-05.
@@ -63,6 +65,7 @@ public class Tap extends Actor {
 
         Texture texture = new Texture("ui/ring.png");
         ringTexture = new TextureRegion(texture);
+
         setScale(0.0f, 0.0f);
         setPosition(Constants.TAP_START_X-Constants.AVATAR_WIDTH/2, Constants.TAP_START_Y-Constants.AVATAR_HEIGHT/2);
         setOrigin(ringTexture.getRegionWidth()/2, ringTexture.getRegionHeight()/2);
@@ -87,11 +90,17 @@ public class Tap extends Actor {
     }
 
     public void addScaleAndFadeAction() {
-        Action actions = Actions.parallel(
-                Actions.scaleTo(2, 2, 0.25f),
-                Actions.fadeOut(0.25f)
+        //停止之前的动作
+        Array<Action> actions = this.getActions();
+        for (Action action : actions){
+            this.removeAction(action);
+        }
+        //开始放大渐隐
+        Action action = Actions.parallel(
+                Actions.fadeOut(0.15f),
+                Actions.scaleTo(2, 2, 0.15f)
         );
-        this.addAction(actions);
+        this.addAction(action);
     }
 
     public void setKilled() {
@@ -110,6 +119,7 @@ public class Tap extends Actor {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
+        batch.setColor(getColor());
         batch.draw(ringTexture, getX(), getY(), getOriginX(), getOriginY(), ringTexture.getRegionWidth(), ringTexture.getRegionHeight(), getScaleX(), getScaleY(), getRotation());
         if ( type == TAP_TYPE_CANAL ){
             //测距
