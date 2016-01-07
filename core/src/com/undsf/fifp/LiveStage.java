@@ -13,7 +13,9 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * Created by Arathi on 2016-01-04.
@@ -23,9 +25,10 @@ public class LiveStage extends Stage {
     private Image background;
     private Image scorebar;
     private IdolAvatar[] avatars;
-    private List<Tap> taps;
+    private List<LinkedList<Tap>> taps;
     private double tempo; //速率
-    private double perfectTime;
+    private double perfectTimeDelay;
+    private double fullActionTime;
     private Music music;
     private Sound sePerfect;
     private Sound seGreat;
@@ -33,6 +36,7 @@ public class LiveStage extends Stage {
     private Sound seBad;
     private Sound seMiss;
     private List<Buff> buffs;
+    private long liveStartTime;
 
     public LiveStage() {
         Texture backgroundTexture = new Texture("backgrounds/06.png");
@@ -46,9 +50,8 @@ public class LiveStage extends Stage {
         seGreat = Gdx.audio.newSound(Gdx.files.internal("se/great.ogg"));
         seGood = Gdx.audio.newSound(Gdx.files.internal("se/good.ogg"));
 
-        perfectTime = 1.0; //Hard级，暂定1秒
-        double fullActionTime = perfectTime * Constants.FULL_ACTION_RATE;
-        double fullActionLength = Constants.PERFECT_LENGTH * Constants.FULL_ACTION_RATE;
+        perfectTimeDelay = 1.0; //Easy 2秒、Normal 1.5秒、Hard 1秒
+        fullActionTime = perfectTimeDelay * Constants.FULL_ACTION_RATE;
 
         background.setPosition(0, 0);
 
@@ -80,15 +83,21 @@ public class LiveStage extends Stage {
                 Actions.alpha(0.5f, 0.75f)
         );
 
-        taps = new ArrayList<Tap>();
+        liveStartTime = System.currentTimeMillis() + 1000; //开始于2秒后
+        taps = new ArrayList<LinkedList<Tap>>();
+        for (int i=0; i<Constants.IDOL_AMOUNT; i++) {
+            LinkedList<Tap> q = new LinkedList<Tap>();
+            taps.add( q );
+        }
 
-        Tap tapRing = new Tap(2, Tap.TAP_TYPE_RING, 0, false);
-        tapRing.addMoveAndScaleAction((float) fullActionTime);
-        this.addActor(tapRing);
+        addTap(2, Tap.TAP_TYPE_RING, 1000, 0, false);
+        addTap(6, Tap.TAP_TYPE_CANAL, 1500, 0, false);
+    }
 
-        Tap tapCanal = new Tap(6, Tap.TAP_TYPE_CANAL, 100, false);
-        tapCanal.addMoveAndScaleAction((float) fullActionTime);
-        this.addActor(tapCanal);
+    public void addTap(int target, int type, int time, float length, boolean star) {
+        Tap tap = new Tap(target, type, time, length, star, false);
+        this.addActor(tap);
+        this.taps.get(target).add(tap);
     }
 
     public int judging(int touchTime, int nextPerfectTime) {
@@ -106,7 +115,7 @@ public class LiveStage extends Stage {
             return Constants.JUDGING_GOOD;
         }
         if (delta >= Constants.PERFECT_THRESHOLD && delta < Constants.GREAT_THRESHOLD){
-            return Constants.JUDGING_GOOD;
+            return Constants.JUDGING_GREAT;
         }
         //在perfect范围内，判定为perfect
         if (delta >= -Constants.PERFECT_THRESHOLD && delta < Constants.PERFECT_THRESHOLD){
@@ -149,9 +158,16 @@ public class LiveStage extends Stage {
     public void removeExpiredTaps() {
         //在这里移除失效的tap，如果超时，就标记为MISS
         if (taps == null) return;
-        for (Tap tap : taps){
-            //
-        }
+        //for (Queue<Tap> q : taps){
+        //    long currentTime = System.currentTimeMillis();
+        //    Tap tap = q.element();
+        //    while (tap != null) {
+        //        if (currentTime - tap.getPerfectTime() > Constants.BAD_THRESHOLD) {
+        //            //超过了BAD判定的阈值，MISS的情况
+        //            //TODO 播放MISS动画，清空Combo
+        //        }
+        //    }
+        //}
     }
 
     /**
@@ -168,36 +184,60 @@ public class LiveStage extends Stage {
             bottomY = Constants.AVATAR_COORDINATE[id][Constants.INDEX_Y];
             topY = Constants.AVATAR_COORDINATE[id][Constants.INDEX_Y] + Constants.AVATAR_HEIGHT;
             if (x>=leftX && x<=rightX && y>=bottomY && y<=topY){
-                //System.out.println("[INFO]  ("+x+","+y+")在Avatar"+id+"("+leftX+"->"+rightX+","+bottomY+"->"+topY+")范围内");
                 return id;
             }
-            //System.err.println("[ERROR] ("+x+","+y+")不在Avatar"+id+"("+leftX+"->"+rightX+","+bottomY+"->"+topY+")范围内");
         }
         return -1;
     }
 
     /**
      * 选取正在某路径上运动的离终点最近的tap
-     * @param avatarID
+     * @param path
      * @return 如果这条路径上没有符合条件的tap，返回null
      */
-    public Tap getTapByPath(int avatarID) {
-        return null;
+    public Tap getTapByPath(int path) {
+        Queue<Tap> q = taps.get(path);
+        Tap tap = q.element();
+        //TODO 如果取到了失效的tap，重新取
+        //if (tap == null) return null;
+        return tap;
     }
 
     public void update() {
         //定时更新
+        //for (int i=0; i<Constants.IDOL_AMOUNT; i++) {
+        //    LinkedList<Tap> q = taps.get(i);
+        //    Tap tap = q.element();
+        //    if (tap.isKilled()) q.remove();
+        //}
+        removeExpiredTaps(); //先更新
+        for (LinkedList<Tap> q : taps){
+            for (Tap tap : q){
+                //if (tap.isKilled()) continue;
+                if (tap.isCreated()) continue;
+                long currentTime = System.currentTimeMillis();
+                long liveElapseTime = currentTime - liveStartTime;
+                long delta = tap.getPerfectTime() - liveElapseTime;
+                if (delta <= perfectTimeDelay) {
+                    tap.addMoveAndScaleAction((float) fullActionTime);
+                    tap.setCreated();
+                }
+            }
+        }
+        //tap.addMoveAndScaleAction((float) fullActionTime);
+        //currentTime
     }
 
     @Override
     public void draw() {
         super.draw();
-        ////辅助线
+        //辅助线
         //ShapeRenderer sr = new ShapeRenderer();
         //sr.setAutoShapeType(true);
         //sr.begin();
         //for (int i=0; i<Constants.IDOL_AMOUNT; i++){
         //    sr.rect(Constants.AVATAR_COORDINATE[i][0], Constants.AVATAR_COORDINATE[i][1], Constants.AVATAR_WIDTH, Constants.AVATAR_HEIGHT);
+        //    sr.line(Constants.TAP_START_X, Constants.TAP_START_Y, Constants.AVATAR_COORDINATE[i][0]+Constants.AVATAR_WIDTH/2, Constants.AVATAR_COORDINATE[i][1]+Constants.AVATAR_WIDTH/2);
         //}
         //sr.end();
     }
@@ -214,10 +254,11 @@ public class LiveStage extends Stage {
         int canvasY = Gdx.graphics.getHeight() - screenY;
         System.out.println("touchDown: " + canvasX + "," + canvasY);
         int avatarID = getAvatarPositionID(canvasX, canvasY);
-        if (avatarID==-1){
+        if (avatarID<0 || avatarID>=Constants.IDOL_AMOUNT) {
             return false;
         }
         //检测是否有音符开始
+        Tap nextTap = getTapByPath(avatarID);
         int result = judging(1000, 1000);
         playTouchFeedbackEffect(result);
         return true;

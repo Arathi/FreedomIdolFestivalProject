@@ -1,5 +1,7 @@
 package com.undsf.fifp;
 
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -17,36 +19,58 @@ public class Tap extends Actor {
 
     private int type;
     private int target;
+    private long perfectTime;
     private float length;
-    private TextureRegion ringImage;
+    private boolean star;
+    private boolean item;
 
+    private boolean created;
+    private boolean killed;
+
+    private TextureRegion ringTexture;
+    private TextureRegion terminalTexture;
+    private TextureRegion canalTexture;
+
+    @Deprecated
     public Tap() {
-        init(0, TAP_TYPE_RING, 0, false, false);
+        init(0, TAP_TYPE_RING, 0, 0, false, false);
     }
 
+    @Deprecated
     public Tap(int target){
-        init(target, TAP_TYPE_RING, 0, false, false);
+        init(target, TAP_TYPE_RING, 0, 0, false, false);
     }
 
+    @Deprecated
     public Tap(int target, int type, float length, boolean star) {
-        init(target, type, length, star, false);
+        init(target, type, 0, length, star, false);
     }
 
-    public Tap(int target, int type, float length, boolean star, boolean item){
-        init(target, type, length, star, item);
+    public Tap(int target, int type, long perfectTime, float length, boolean star, boolean item){
+        init(target, type, perfectTime, length, star, item);
     }
 
-    public void init(int target, int type, float length, boolean star, boolean item) {
+    public void init(int target, int type, long perfectTime, float length, boolean star, boolean item) {
         this.target = target;
         this.type = type;
+        this.perfectTime = perfectTime;
         this.length = length;
+        if (type == TAP_TYPE_RING) this.length = 0;
+        this.star = star;
+        this.item = item;
+        created = false;
+        killed = false;
 
         Texture texture = new Texture("ui/ring.png");
-        ringImage = new TextureRegion(texture);
+        ringTexture = new TextureRegion(texture);
         setScale(0.0f, 0.0f);
         setPosition(Constants.TAP_START_X-Constants.AVATAR_WIDTH/2, Constants.TAP_START_Y-Constants.AVATAR_HEIGHT/2);
-        setOrigin(ringImage.getRegionWidth()/2,ringImage.getRegionHeight()/2);
+        setOrigin(ringTexture.getRegionWidth()/2, ringTexture.getRegionHeight()/2);
         this.setVisible(false);
+    }
+
+    public long getPerfectTime() {
+        return perfectTime;
     }
 
     public int getTarget() {
@@ -62,24 +86,44 @@ public class Tap extends Actor {
         this.addAction(actions);
     }
 
+    public void addScaleAndFadeAction() {
+        Action actions = Actions.parallel(
+                Actions.scaleTo(2, 2, 0.25f),
+                Actions.fadeOut(0.25f)
+        );
+        this.addAction(actions);
+    }
+
+    public void setKilled() {
+        killed = true;
+    }
+    public void setCreated() {
+        created = true;
+    }
+    public boolean isKilled() {
+        return killed;
+    }
+    public boolean isCreated() {
+        return created;
+    }
+
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-        batch.draw(ringImage, getX(), getY(), getOriginX(), getOriginY(), ringImage.getRegionWidth(), ringImage.getRegionHeight(), getScaleX(), getScaleY(), getRotation());
-        //if ( type == TAP_TYPE_CANAL ){
-        //    ShapeRenderer sr = new ShapeRenderer();
-        //    sr.setAutoShapeType(true);
-        //    sr.begin();
-        //    sr.rect(getX(), getY(), ringImage.getRegionWidth()*getScaleX(), ringImage.getRegionHeight());
-        //    //sr.rect(Constants.AVATAR_COORDINATE[i][0], Constants.AVATAR_COORDINATE[i][1], Constants.AVATAR_WIDTH, Constants.AVATAR_HEIGHT);
-        //    //float[] points = new float[8];
-        //    //points[0] = getX();
-        //    //points[1] = getY() + ringImage.getRegionHeight()/2;
-        //    //points[2] = getX();
-        //    //points[3] = getY() + ringImage.getRegionHeight()/2;
-        //    //sr.polygon(points);
-        //    sr.end();
-        //}
+        batch.draw(ringTexture, getX(), getY(), getOriginX(), getOriginY(), ringTexture.getRegionWidth(), ringTexture.getRegionHeight(), getScaleX(), getScaleY(), getRotation());
+        if ( type == TAP_TYPE_CANAL ){
+            //测距
+            float deltaX = Math.abs(getX() - (Constants.TAP_START_X - Constants.AVATAR_WIDTH/2));
+            float deltaY = Math.abs(getY() - (Constants.TAP_START_Y - Constants.AVATAR_WIDTH/2));
+            float distance = (float) Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+            if (distance > length) {
+                //TODO 绘制末端
+                //TODO 绘制中间部分
+            }
+            else {
+                //TODO 绘制中间部分
+            }
+        }
     }
 
     @Override
