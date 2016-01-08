@@ -11,7 +11,10 @@ import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.undsf.freerhythm.ImdFile;
+import com.undsf.freerhythm.TapInfo;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,7 +29,6 @@ public class LiveStage extends Stage {
     private Image scorebar;
     private IdolAvatar[] avatars;
     private List<LinkedList<Tap>> taps;
-    private double tempo; //速率
     private double perfectTimeDelay;
     private double fullActionTime;
     private Music music;
@@ -83,7 +85,6 @@ public class LiveStage extends Stage {
                 Actions.alpha(0.5f, 0.75f)
         );
 
-        liveStartTime = System.currentTimeMillis() + 1000; //开始于1秒后
         taps = new ArrayList<LinkedList<Tap>>();
         for (int i=0; i<Constants.IDOL_AMOUNT; i++) {
             LinkedList<Tap> q = new LinkedList<Tap>();
@@ -94,21 +95,37 @@ public class LiveStage extends Stage {
         String songName = "sakura_iro_no_yume";
         int keys = 9;
         String difficulty = "ez";
-        Music music = Gdx.audio.newMusic( Gdx.files.internal("songs/" + songName + "/" + songName + ".mp3") );
-        music.play();
+        FileHandle musicFileHandle = Gdx.files.internal("songs/" + songName + "/" + songName + ".mp3");
+        FileHandle musicSheetFileHandle = Gdx.files.internal("songs/" + songName + "/" + songName + "_" + keys + "k_" + difficulty + ".imd");
+        music = Gdx.audio.newMusic( musicFileHandle );
+        File musicSheet = musicSheetFileHandle.file();
+        ImdFile imd = new ImdFile(musicSheet);
+        imd.read();
+        List<TapInfo> tapInfos = imd.getTaps();
 
-        addTap(2, Tap.TAP_TYPE_RING, 1000, 0, false);
-        addTap(6, Tap.TAP_TYPE_CANAL, 1500, 0, false);
-        //addTap(2, Tap.TAP_TYPE_RING, 2000, 0, false);
-        //addTap(2, Tap.TAP_TYPE_RING, 3000, 0, false);
-        //addTap(2, Tap.TAP_TYPE_RING, 4000, 0, false);
-        //addTap(2, Tap.TAP_TYPE_RING, 5000, 0, false);
-        //addTap(2, Tap.TAP_TYPE_RING, 6000, 0, false);
+        for (TapInfo tapInfo : tapInfos) {
+            int type = 0;
+            int length = 0;
+            if (tapInfo.getMode()==TapInfo.MODE_CLICK || tapInfo.getMode()==TapInfo.MODE_SLIDE) {
+                type = Tap.TAP_TYPE_RING;
+            }
+            else if (tapInfo.getMode()==TapInfo.MODE_HOLD) {
+                type = Tap.TAP_TYPE_CANAL;
+                length = tapInfo.getParam();
+            }
+            else {
+                continue;
+            }
+            int lane = tapInfo.getKey();
+            int startTime = tapInfo.getTimestamp();
+            addTap( tapInfo.getKey(), type, startTime, length, false );
+        }
+
+        liveStartTime = System.currentTimeMillis() + Constants.INTRO_FREEZE_TIME; //开始于1秒后
     }
 
     public void addTap(int target, int type, int time, float length, boolean star) {
         Tap tap = new Tap(target, type, time, length, star, false);
-        this.addActor(tap);
         this.taps.get(target).add(tap);
     }
 
@@ -231,20 +248,21 @@ public class LiveStage extends Stage {
     }
 
     public void update() {
+        long liveElapseTime = System.currentTimeMillis() - liveStartTime;
+        if (liveElapseTime >= 0 && !music.isPlaying()){
+            music.play();
+        }
         //定时更新
         removeExpiredTaps(); //先更新
         for (LinkedList<Tap> q : taps){
             for (Tap tap : q){
                 //if (tap.isKilled()) continue;
                 if (tap.isCreated()) continue;
-                long liveElapseTime = System.currentTimeMillis() - liveStartTime;
-                //System.out.println(liveElapseTime);
+                liveElapseTime = System.currentTimeMillis() - liveStartTime;
                 if (liveElapseTime < 0) continue;
 
-                //long delta = tap.getPerfectTime() - liveElapseTime;
-                //System.out.println("perfectTimeDelay = " + perfectTimeDelay);
                 if (liveElapseTime + perfectTimeDelay*1000 >= tap.getPerfectTime()) {
-                    //System.out.println(liveElapseTime + ": send " + tap.getPerfectTime());
+                    this.addActor(tap);
                     tap.addMoveAndScaleAction((float) fullActionTime);
                     tap.setCreated();
                 }

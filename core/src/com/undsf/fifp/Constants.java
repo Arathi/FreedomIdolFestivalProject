@@ -22,6 +22,8 @@ public class Constants {
 
     public static final double FULL_ACTION_RATE = 2.05;
 
+    public static final int INTRO_FREEZE_TIME = 1000;
+
     //TODO thresholds
     public static final double BAD_THRESHOLD = 0.20;
     public static final double GOOD_THRESHOLD = 0.15;

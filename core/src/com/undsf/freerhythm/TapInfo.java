@@ -1,8 +1,6 @@
 package com.undsf.freerhythm;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.*;
 
 import com.undsf.util.Convert;
 
@@ -25,6 +23,13 @@ public class TapInfo {
 	protected byte key;
 	protected int param;
 
+	public TapInfo(short mode, int timestamp, byte key, int param){
+		this.mode = mode;
+		this.timestamp = timestamp;
+		this.key = key;
+		this.param = param;
+	}
+
 	public TapInfo(byte[] buffer) {
 		try {
 			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(buffer));
@@ -45,6 +50,29 @@ public class TapInfo {
 		info += "属性"+param+"\n";
 		return info;
 	}
+
+	public byte[] toByteArray() {
+		byte[] data = null;
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream dos = new DataOutputStream(baos);
+			//dos.writeShort(mode);
+			//dos.writeInt(timestamp);
+			//dos.writeByte(key);
+			//dos.writeInt(param);
+			dos.writeShort(Convert.ShortToLittleEndian(mode));
+			dos.writeInt(Convert.IntToLittleEndian(timestamp));
+			dos.writeByte(key);
+			dos.writeInt(Convert.IntToLittleEndian(param));
+			dos.close();
+			data = baos.toByteArray();
+			baos.close();
+		}
+		catch (IOException e){
+			e.printStackTrace();
+		}
+		return data;
+	}
 	
 	public int getKey(){
 		return (int)key;
@@ -56,5 +84,9 @@ public class TapInfo {
 
 	public short getMode() {
 		return mode;
+	}
+
+	public int getParam() {
+		return param;
 	}
 }
