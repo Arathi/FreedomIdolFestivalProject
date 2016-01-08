@@ -39,6 +39,11 @@ public class LiveStage extends Stage {
     private Sound seMiss;
     private List<Buff> buffs;
     private long liveStartTime;
+    private Image imgPerfect;
+    private Image imgGreat;
+    private Image imgGood;
+    private Image imgBad;
+    private Image imgMiss;
 
     public LiveStage() {
         Texture backgroundTexture = new Texture("backgrounds/06.png");
@@ -47,6 +52,7 @@ public class LiveStage extends Stage {
         background = new Image(backgroundTexture);
         scorebar = new Image(scorebarTexture);
         tapStartPoint = new Image(tapStartTexture);
+        //TODO 加载图片资源
 
         sePerfect = Gdx.audio.newSound(Gdx.files.internal("se/perfect.mp3"));
         seGreat = Gdx.audio.newSound(Gdx.files.internal("se/great.mp3"));
@@ -118,7 +124,7 @@ public class LiveStage extends Stage {
             }
             int lane = tapInfo.getKey();
             int startTime = tapInfo.getTimestamp();
-            addTap( tapInfo.getKey(), type, startTime, length, false );
+            addTap( lane, type, startTime, length, false );
         }
 
         liveStartTime = System.currentTimeMillis() + Constants.INTRO_FREEZE_TIME; //开始于1秒后
