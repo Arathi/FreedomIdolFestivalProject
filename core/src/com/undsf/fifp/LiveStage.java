@@ -5,14 +5,19 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.Scaling;
+import com.badlogic.gdx.utils.viewport.ScalingViewport;
 import com.undsf.freerhythm.ImdFile;
 import com.undsf.freerhythm.TapInfo;
+import javafx.scene.input.KeyCode;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -44,8 +49,26 @@ public class LiveStage extends Stage {
     private Image imgGood;
     private Image imgBad;
     private Image imgMiss;
+    private int combo;
+
+    private static final int KEY_CODE_A = 29;
+    private static final int KEY_CODE_S = 47;
+    private static final int KEY_CODE_D = 32;
+    private static final int KEY_CODE_F = 34;
+    private static final int KEY_CODE_G = 35;
+    private static final int KEY_CODE_H = 36;
+    private static final int KEY_CODE_J = 38;
+    private static final int KEY_CODE_K = 39;
+    private static final int KEY_CODE_L = 40;
 
     public LiveStage() {
+        super(new ScalingViewport(
+                Scaling.none,
+                960,
+                640,
+                new OrthographicCamera()
+        ), new SpriteBatch());
+
         Texture backgroundTexture = new Texture("backgrounds/06.png");
         Texture scorebarTexture = new Texture("ui/scorebar_ng.png");
         Texture tapStartTexture = new Texture("ui/tapstart_ng.png");
@@ -108,6 +131,8 @@ public class LiveStage extends Stage {
         ImdFile imd = new ImdFile(musicSheet);
         imd.read();
         List<TapInfo> tapInfos = imd.getTaps();
+
+        combo = 0;
 
         for (TapInfo tapInfo : tapInfos) {
             int type = 0;
@@ -204,16 +229,23 @@ public class LiveStage extends Stage {
     public void removeExpiredTaps() {
         //在这里移除失效的tap，如果超时，就标记为MISS
         if (taps == null) return;
-        //for (Queue<Tap> q : taps){
-        //    long currentTime = System.currentTimeMillis();
-        //    Tap tap = q.element();
-        //    while (tap != null) {
-        //        if (currentTime - tap.getPerfectTime() > Constants.BAD_THRESHOLD) {
-        //            //超过了BAD判定的阈值，MISS的情况
-        //            //TODO 播放MISS动画，清空Combo
-        //        }
-        //    }
-        //}
+        for (LinkedList<Tap> q : taps){
+            for (Tap tap : q){
+                if (tap.isCreated()==false){
+                    break;
+                }
+                if (tap.isKilled()){
+                    continue;
+                }
+                long liveElapseTime = System.currentTimeMillis() - liveStartTime;
+                //TODO 检查MISS超时，扣HP，Combo清零
+                if (liveElapseTime > tap.getPerfectTime() + tap.getLength() + Constants.BAD_THRESHOLD*1000){
+                    System.out.println("MISS");
+                    tap.setKilled();
+                    combo = 0;
+                }
+            }
+        }
     }
 
     /**
@@ -242,15 +274,22 @@ public class LiveStage extends Stage {
      * @return 如果这条路径上没有符合条件的tap，返回null
      */
     public Tap getTapByPath(int path) {
-        Queue<Tap> q = taps.get(path);
+        if (path<0 || path> Constants.IDOL_AMOUNT) return null;
+        LinkedList<Tap> q = taps.get(path);
         if (q==null || q.size()<=0) {
             System.err.println(path+"号路径无法访问或者没有tap");
             return null;
         }
-        Tap tap = q.element();
+        for (Tap tap : q){
+            //TODO 筛选tap
+            if (tap.isKilled()) continue;
+            if (!tap.isCreated()) break;
+            return tap;
+        }
+        //Tap tap = q.element();
         //TODO 如果取到了失效的tap，重新取
         //if (tap == null) return null;
-        return tap;
+        return null;
     }
 
     public void update() {
@@ -300,7 +339,7 @@ public class LiveStage extends Stage {
         super.touchDown(screenX, screenY, pointer, button);
         int canvasX = screenX;
         int canvasY = Gdx.graphics.getHeight() - screenY;
-        System.out.println("touchDown: " + canvasX + "," + canvasY);
+        //System.out.println("touchDown: " + canvasX + "," + canvasY);
         int avatarID = getAvatarPositionID(canvasX, canvasY);
         if (avatarID<0 || avatarID>=Constants.IDOL_AMOUNT) {
             return false;
@@ -320,7 +359,7 @@ public class LiveStage extends Stage {
         super.touchUp(screenX, screenY, pointer, button);
         int canvasX = screenX;
         int canvasY = Gdx.graphics.getHeight() - screenY;
-        System.out.println("touchUp: " + canvasX + "," + canvasY);
+        //System.out.println("touchUp: " + canvasX + "," + canvasY);
         int avatarID = getAvatarPositionID(canvasX, canvasY);
         if (avatarID==-1){
             return false;
@@ -330,6 +369,51 @@ public class LiveStage extends Stage {
         //Tap nextTap =
         //int result = judging(1000, 1000);
         playTouchFeedbackEffect(null, 0);
+        return false;
+    }
+
+    @Override
+    public boolean keyDown(int keyCode) {
+        super.keyDown(keyCode);
+        //System.out.println(keyCode);
+        int lane = -1;
+        switch (keyCode){
+        case KEY_CODE_A:
+            lane = 0;
+            break;
+        case KEY_CODE_S:
+            lane = 1;
+            break;
+        case KEY_CODE_D:
+            lane = 2;
+            break;
+        case KEY_CODE_F:
+            lane = 3;
+            break;
+        case KEY_CODE_G:
+            lane = 4;
+            break;
+        case KEY_CODE_H:
+            lane = 5;
+            break;
+        case KEY_CODE_J:
+            lane = 6;
+            break;
+        case KEY_CODE_K:
+            lane = 7;
+            break;
+        case KEY_CODE_L:
+            lane = 8;
+            break;
+        default:
+            lane = -1;
+        }
+
+        Tap nextTap = getTapByPath(lane);
+        if (nextTap == null) return false;
+        long liveElapseTime = System.currentTimeMillis() - liveStartTime;
+        int result = judging(liveElapseTime, nextTap.getPerfectTime());
+        playTouchFeedbackEffect(nextTap, result);
         return false;
     }
 }

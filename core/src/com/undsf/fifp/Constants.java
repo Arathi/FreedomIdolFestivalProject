@@ -24,11 +24,11 @@ public class Constants {
 
     public static final int INTRO_FREEZE_TIME = 1000;
 
-    //TODO thresholds
-    public static final double BAD_THRESHOLD = 0.20;
-    public static final double GOOD_THRESHOLD = 0.15;
-    public static final double GREAT_THRESHOLD = 0.10;
-    public static final double PERFECT_THRESHOLD = 0.05;
+    //thresholds
+    public static final double BAD_THRESHOLD = 0.25;
+    public static final double GOOD_THRESHOLD = 0.20;
+    public static final double GREAT_THRESHOLD = 0.15;
+    public static final double PERFECT_THRESHOLD = 0.10;
 
     //判定
     public static final int JUDGING_NONE = 0;

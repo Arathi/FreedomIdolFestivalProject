@@ -33,6 +33,8 @@ public class Tap extends Actor {
     private TextureRegion terminalTexture;
     private TextureRegion canalTexture;
 
+
+
     @Deprecated
     public Tap() {
         init(0, TAP_TYPE_RING, 0, 0, false, false);
@@ -80,6 +82,10 @@ public class Tap extends Actor {
         return target;
     }
 
+    public float getLength() {
+        return length;
+    }
+
     public void addMoveAndScaleAction(float fullActionTime) {
         Action actions = Actions.parallel(
                 Actions.delay(0.1f, Actions.show()),
@@ -87,6 +93,7 @@ public class Tap extends Actor {
                 Actions.scaleTo((float)Constants.FULL_ACTION_RATE, (float)Constants.FULL_ACTION_RATE, fullActionTime)
         );
         this.addAction(actions);
+        setCreated();
     }
 
     public void addScaleAndFadeAction() {
@@ -101,6 +108,7 @@ public class Tap extends Actor {
                 Actions.scaleTo(2, 2, 0.15f)
         );
         this.addAction(action);
+        setKilled();
     }
 
     public void setKilled() {
@@ -132,6 +140,7 @@ public class Tap extends Actor {
             }
             else {
                 //TODO 绘制中间部分
+                Image img = null;
             }
         }
     }
